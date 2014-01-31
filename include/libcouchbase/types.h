@@ -51,7 +51,7 @@ extern "C" {
     typedef struct lcb_timer_st *lcb_timer_t;
 
 
-    typedef lcb_uint8_t lcb_datatype_t;
+   /* typedef lcb_uint8_t lcb_datatype_t;*/
 
     typedef enum {
         LCB_CONFIGURATION_NEW = 0x00,
@@ -75,6 +75,15 @@ extern "C" {
         /** Prepend this  object to the existing object */
         LCB_PREPEND = 0x05
     } lcb_storage_t;
+
+    typedef enum {
+
+      LCB_BINARY_RAW_BYTES = 0x00,
+      LCB_BINARY_DATATYPE_JSON = 0x01,
+      LCB_BINARY_DATATYPE_COMPRESSED = 0x02,
+      LCB_BINARY_DATATYPE_COMPRESSED_JSON = 0x03, 
+
+   } lcb_datatype_t;
 
     /**
      * Possible statuses for keys in OBSERVE response

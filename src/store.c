@@ -56,6 +56,7 @@ lcb_error_t lcb_store(lcb_t instance,
         lcb_size_t nkey = items[ii]->v.v0.nkey;
         lcb_cas_t cas = items[ii]->v.v0.cas;
         lcb_uint32_t flags = items[ii]->v.v0.flags;
+        lcb_datatype_t datatype = items[ii]->v.v0.datatype;
         lcb_time_t exp = items[ii]->v.v0.exptime;
         const void *bytes = items[ii]->v.v0.bytes;
         lcb_size_t nbytes = items[ii]->v.v0.nbytes;
@@ -78,7 +79,7 @@ lcb_error_t lcb_store(lcb_t instance,
         req.message.header.request.magic = PROTOCOL_BINARY_REQ;
         req.message.header.request.keylen = ntohs((lcb_uint16_t)nkey);
         req.message.header.request.extlen = 8;
-        req.message.header.request.datatype = PROTOCOL_BINARY_RAW_BYTES;
+        req.message.header.request.datatype = datatype;
         req.message.header.request.vbucket = ntohs((lcb_uint16_t)vb);
         req.message.header.request.opaque = ++instance->seqno;
         req.message.header.request.cas = cas;
