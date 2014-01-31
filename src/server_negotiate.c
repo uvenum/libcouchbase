@@ -286,6 +286,63 @@ static int send_sasl_step(struct negotiation_context *ctx,
     return 0;
 }
 
+static int send_server_hello(struct negotiation_context *ctx,
+                             packet_info *packet)
+{
+
+    protocol_binary_request_no_extras req;
+    protocol_binary_request_header *hdr = &req.message.header;
+    lcb_connection_t conn = ctx->conn;
+    lcb_size_t to_write;
+    off_t key_offset;
+    size_t keylen;
+    const char *useragent = "my prototype";
+    uint16_t feature = htons(PROTOCOL_BINARY_FEATURE_DATATYPE);
+    memset(&req, 0, sizeof(req));
+    
+    /*fill in header info*/
+    hdr->request.magic = PROTOCOL_BINARY_REQ;
+    hdr->request.opcode = PROTOCOL_BINARY_CMD_HELLO;
+    hdr->request.keylen = strlen(useragent);
+    hdr->request.datatype = PROTOCOL_BINARY_RAW_BYTES;
+    hdr->request.bodylen = htonl((uint32_t)(keylen + sizeof(feature)));
+    hdr->request.opaque = 0xdeadbeef;
+    hdr->request.extlen = 0;
+    
+    key_offset = sizeof(protocol_binary_request_no_extras) + hdr->request.extlen;
+    keylen = strlen(useragent);
+    /*move header offset from beginning of packet and fill in body (extras, key and value)
+    memcpy(&req+key_offset, useragent, keylen);
+    memcpy(&req+key_offset+keylen, )*/
+           
+    /** Write the packet */
+    if (!conn->output) {
+        if (! (conn->output = calloc(1, sizeof(*conn->output)))) {
+            negotiation_set_error_ex(ctx, LCB_CLIENT_ENOMEM, NULL);
+            return -1;
+        }
+    }
+    
+    to_write = sizeof(req.bytes) + keylen + sizeof(feature);
+    
+    if (!ringbuffer_ensure_capacity(conn->output, to_write)) {
+        negotiation_set_error_ex(ctx, LCB_CLIENT_ENOMEM, NULL);
+        LOG(ctx, ERR, "Send Sasl 1");
+        return -1;
+    }
+    
+    LOG(ctx, ERR, "Send Sasl 2");
+    ringbuffer_write(conn->output, req.bytes, sizeof(req.bytes));
+    LOG(ctx, ERR, "Send Sasl 3");
+    ringbuffer_write(conn->output, useragent, keylen);
+    LOG(ctx, ERR, "Send Sasl 4");
+    ringbuffer_write(conn->output, &feature,sizeof(feature));
+    LOG(ctx, ERR, "Send Sasl 5");
+    lcb_sockrw_set_want(conn, LCB_WRITE_EVENT, 0);
+    return 0;
+
+}
+
 /**
  * It's assumed the server buffers will be reset upon close(), so we must make
  * sure to _not_ release the ringbuffer if that happens.
@@ -343,8 +400,9 @@ static void io_read_handler(lcb_connection_t conn)
 
     case PROTOCOL_BINARY_CMD_SASL_AUTH: {
         if (status == PROTOCOL_BINARY_RESPONSE_SUCCESS) {
-            rv = 0;
-            is_done = 1;
+            LOG(ctx, ERR, "Case Sasl 1");
+            rv = send_server_hello(ctx, &info);
+            /*is_done = 1;send server hello call and break */
             break;
         }
 
@@ -357,17 +415,33 @@ static void io_read_handler(lcb_connection_t conn)
         break;
     }
 
+
     case PROTOCOL_BINARY_CMD_SASL_STEP: {
         if (status != PROTOCOL_BINARY_RESPONSE_SUCCESS) {
             negotiation_set_error(ctx, "SASL Step Failed");
             rv = -1;
         } else {
-            rv = 0;
-            is_done = 1;
+            /*rv = 0; send server hello call and break*/
+            LOG(ctx, ERR, "Case Sasl step 1");
+            rv = send_server_hello(ctx, &info);
+            /*is_done = 1;*/
         }
         break;
     }
 
+   case PROTOCOL_BINARY_CMD_HELLO: {
+       if (status != PROTOCOL_BINARY_RESPONSE_SUCCESS) {
+           negotiation_set_error(ctx, "Hello Server Failed");
+           LOG(ctx, ERR, "Case Hello 1");
+           rv = -1;
+       } else {
+           rv = 0;
+           is_done=1;
+           LOG(ctx, ERR, "Case Hello 2");
+       }
+       break;
+    }
+            
     default: {
         rv = -1;
         negotiation_set_error_ex(ctx, LCB_NOT_SUPPORTED,
