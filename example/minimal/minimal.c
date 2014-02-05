@@ -82,12 +82,16 @@ static void get_callback(lcb_t instance, const void *cookie, lcb_error_t error,
 
 int main(int argc, char *argv[])
 {
+    
+    fprintf(stderr,"first line.."); 
     lcb_error_t err;
     lcb_t instance;
     struct lcb_create_st create_options;
-
+    fprintf(stderr,"before memset.."); 
     memset(&create_options, 0, sizeof(create_options));
-
+    
+    fprintf(stderr,"after memset..host is %s", argv[1]);
+ 
     if (argc > 1) {
         create_options.v.v0.host = argv[1];
     }
@@ -98,7 +102,11 @@ int main(int argc, char *argv[])
     if (argc > 3) {
         create_options.v.v0.passwd = argv[3];
     }
+    fprintf(stderr,"after argc section");
+    
     err = lcb_create(&instance, &create_options);
+    fprintf(stderr,"after lcb create section");
+    
     if (err != LCB_SUCCESS) {
         fprintf(stderr, "Failed to create libcouchbase instance: %s\n",
                 lcb_strerror(NULL, err));
@@ -115,6 +123,18 @@ int main(int argc, char *argv[])
     (void)lcb_set_get_callback(instance, get_callback);
     (void)lcb_set_store_callback(instance, store_callback);
     /* Run the event loop and wait until we've connected */
+    fprintf(stderr,"after setting callbacks");
+    lcb_wait(instance);
+    {
+        fprintf(stderr,"before lcb_hello...");
+        err = lcb_hello(instance, NULL);
+        fprintf(stderr,"after hello call..");
+        if (err != LCB_SUCCESS) {
+            fprintf(stderr, "Failed to hello: %s\n", lcb_strerror(NULL, err));
+            return 1;
+        }
+    }
+    fprintf(stderr,"after hello");
     lcb_wait(instance);
     {
         lcb_store_cmd_t cmd;
@@ -123,15 +143,18 @@ int main(int argc, char *argv[])
         commands[0] = &cmd;
         memset(&cmd, 0, sizeof(cmd));
         cmd.v.v0.operation = LCB_SET;
-        cmd.v.v0.key = "foo";
+        cmd.v.v0.datatype = LCB_BINARY_DATATYPE_COMPRESSED;
+        cmd.v.v0.key = "oo";
         cmd.v.v0.nkey = 3;
         cmd.v.v0.bytes = "bar";
         cmd.v.v0.nbytes = 3;
+        fprintf(stderr,"before store");
         err = lcb_store(instance, NULL, 1, commands);
         if (err != LCB_SUCCESS) {
             fprintf(stderr, "Failed to store: %s\n", lcb_strerror(NULL, err));
             return 1;
         }
+        fprintf(stderr,"after store");
     }
     lcb_wait(instance);
     {

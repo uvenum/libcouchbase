@@ -128,6 +128,7 @@ extern "C"
         PROTOCOL_BINARY_CMD_TOUCH = 0x1c,
         PROTOCOL_BINARY_CMD_GAT = 0x1d,
         PROTOCOL_BINARY_CMD_GATQ = 0x1e,
+        PROTOCOL_BINARY_CMD_HELLO = 0x1f,
 
         PROTOCOL_BINARY_CMD_SASL_LIST_MECHS = 0x20,
         PROTOCOL_BINARY_CMD_SASL_AUTH = 0x21,
@@ -187,12 +188,11 @@ extern "C"
      *   0000 0... = Reserved
      */
     typedef enum {
-        PROTOCOL_BINARY_RAW_BYTES = 0x00
-#define PROTOCOL_BINARY_DATATYPE_JSON 0x01
-#define PROTOCOL_BINARY_DATATYPE_GZIP 0x02
-#define PROTOCOL_BINARY_DATATYPE_BZIP 0x04
-#define PROTOCOL_BINARY_DATATYPE_LZO  0x06
-    } protocol_binary_datatypes;
+        PROTOCOL_BINARY_RAW_BYTES = 0x00,
+        PROTOCOL_BINARY_DATATYPE_JSON = 0x01,
+        PROTOCOL_BINARY_DATATYPE_COMPRESSED = 0x02,
+        PROTOCOL_BINARY_DATATYPE_COMPRESSED_JSON = 0x03,
+    }protocol_binary_datatypes;
 
 
     /**
@@ -744,6 +744,14 @@ extern "C"
         } message;
         uint8_t bytes[sizeof(protocol_binary_response_header) + sizeof(vbucket_state_t)];
     } protocol_binary_response_get_vbucket;
+
+    typedef enum {
+        PROTOCOL_BINARY_FEATURE_DATATYPE = 0x01
+    } protocol_binary_hello_features;
+
+    typedef protocol_binary_request_no_extras protocol_binary_request_hello;
+   
+    typedef protocol_binary_response_no_extras protocol_binary_response_hello;
 
 
     /**

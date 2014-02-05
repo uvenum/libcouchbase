@@ -112,7 +112,7 @@ lcb_error_t lcb_store(lcb_t instance,
             return lcb_synchandler_return(instance,
                                           lcb_error_handler(instance, LCB_EINVAL,
                                                             "Invalid value passed as storage operation"));
-        }
+}
 
         /* Make it known that this was a success. */
         lcb_error_handler(instance, LCB_SUCCESS, NULL);
@@ -127,6 +127,51 @@ lcb_error_t lcb_store(lcb_t instance,
         lcb_server_end_packet(server);
         lcb_server_send_packets(server);
     }
+
+    return lcb_synchandler_return(instance, LCB_SUCCESS);
+}
+
+LIBCOUCHBASE_API
+lcb_error_t lcb_hello(lcb_t instance,
+                      const void *command_cookie)
+{
+
+        fprintf(stderr,"inside hello function..");
+        lcb_server_t *server;
+        protocol_binary_request_hello req;
+        lcb_size_t headersize;
+        lcb_size_t bodylen;
+
+        server = instance->servers + 1; 
+        const char *useragent = "my prototype";
+        uint16_t feature = htons(PROTOCOL_BINARY_FEATURE_DATATYPE);
+
+        /*const void *key = useragent;*/
+        fprintf(stderr,"after setting useragent.."); 
+        memset(&req, 0, sizeof(req));
+        req.message.header.request.magic = PROTOCOL_BINARY_REQ;
+        req.message.header.request.opcode = PROTOCOL_BINARY_CMD_HELLO;
+        req.message.header.request.keylen = ntohs(strlen(useragent));
+        req.message.header.request.extlen = 0;
+        req.message.header.request.datatype = PROTOCOL_BINARY_RAW_BYTES;
+        req.message.header.request.opaque = 0xdeadbeef;
+
+        /* Make it known that this was a success. */
+        lcb_error_handler(instance, LCB_SUCCESS, NULL);
+
+        req.message.header.request.bodylen = htonl((uint32_t)(strlen(useragent) + sizeof(feature)));
+        fprintf(stderr,"after setting bodylen.."); 
+
+        lcb_server_start_packet(server, NULL, &req, sizeof(req.message.header));
+        fprintf(stderr,"after starting packet.."); 
+        lcb_server_write_packet(server, useragent, (lcb_size_t)strlen(useragent));
+        fprintf(stderr,"after writing key.."); 
+        lcb_server_write_packet(server, &feature, (lcb_size_t)sizeof(feature));
+        fprintf(stderr,"after writing feature.."); 
+        lcb_server_end_packet(server);
+        fprintf(stderr,"after end packet.."); 
+        lcb_server_send_packets(server);
+        fprintf(stderr,"after sending packet.."); 
 
     return lcb_synchandler_return(instance, LCB_SUCCESS);
 }

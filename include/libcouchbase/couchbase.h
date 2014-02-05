@@ -415,6 +415,11 @@ extern "C" {
                           const void *command_cookie,
                           lcb_size_t num,
                           const lcb_store_cmd_t *const *commands);
+    
+    /*hello command*/
+    LIBCOUCHBASE_API
+    lcb_error_t lcb_hello(lcb_t instance,
+                          const void *command_cookie);
 
     /**
      * Perform arithmetic operation on a keys value.

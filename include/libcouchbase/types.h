@@ -77,12 +77,10 @@ extern "C" {
     } lcb_storage_t;
 
     typedef enum {
-
-      LCB_BINARY_RAW_BYTES = 0x00,
-      LCB_BINARY_DATATYPE_JSON = 0x01,
-      LCB_BINARY_DATATYPE_COMPRESSED = 0x02,
-      LCB_BINARY_DATATYPE_COMPRESSED_JSON = 0x03, 
-
+       LCB_BINARY_RAW_BYTES = 0x00,
+       LCB_BINARY_DATATYPE_JSON = 0x01,
+       LCB_BINARY_DATATYPE_COMPRESSED = 0x02,
+       LCB_BINARY_DATATYPE_COMPRESSED_JSON = 0x03, 
    } lcb_datatype_t;
 
     /**

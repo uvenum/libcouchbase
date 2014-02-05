@@ -360,7 +360,7 @@ extern "C" {
                          lcb_uint32_t flags = 0,
                          lcb_time_t exptime = 0,
                          lcb_cas_t cas = 0,
-                         lcb_datatype_t datatype = 0) {
+                         lcb_datatype_t datatype = LCB_BINARY_RAW_BYTES) {
             version = 0;
             v.v0.operation = operation;
             v.v0.key = key;
