@@ -344,6 +344,7 @@ static void getq_response_handler(lcb_server_t *server, packet_info *info)
     lcb_error_t rc;
     lcb_get_resp_t resp;
 
+    fprintf(stderr, "\n The datatype is ...%d", PACKET_DATATYPE(info));
 
     if (key == NULL) {
         lcb_error_handler(server->instance, LCB_EINTERNAL, NULL);
@@ -1092,6 +1093,8 @@ int lcb_dispatch_response(lcb_server_t *c, packet_info *info)
         break;
     case PROTOCOL_BINARY_CMD_NOOP:
         /* Ignore */
+        break;
+    case PROTOCOL_BINARY_CMD_HELLO:
         break;
 
     case CMD_GET_CLUSTER_CONFIG:
