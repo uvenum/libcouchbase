@@ -129,7 +129,7 @@ extern "C"
         PROTOCOL_BINARY_CMD_GAT = 0x1d,
         PROTOCOL_BINARY_CMD_GATQ = 0x1e,
         PROTOCOL_BINARY_CMD_HELLO = 0x1f,
-
+        PROTOCOL_BINARY_CMD_COMPACTDB = 0xb3,
         PROTOCOL_BINARY_CMD_SASL_LIST_MECHS = 0x20,
         PROTOCOL_BINARY_CMD_SASL_AUTH = 0x21,
         PROTOCOL_BINARY_CMD_SASL_STEP = 0x22,
@@ -242,6 +242,14 @@ extern "C"
         } message;
         uint8_t bytes[sizeof(protocol_binary_request_header)];
     } protocol_binary_request_no_extras;
+    
+    typedef union{
+        struct {
+            protocol_binary_request_header header;
+            uint8_t compactcmd[24]; 
+        } message;
+        uint8_t bytes[sizeof(protocol_binary_request_header)+24];
+    } protocol_binary_request_compact;
 
     /**
      * Definition of a response-packet containing no extras
@@ -752,6 +760,7 @@ extern "C"
     typedef protocol_binary_request_no_extras protocol_binary_request_hello;
    
     typedef protocol_binary_response_no_extras protocol_binary_response_hello;
+    typedef protocol_binary_response_no_extras protocol_binary_response_compact;
 
 
     /**

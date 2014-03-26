@@ -377,6 +377,7 @@ extern "C" {
 #endif
     } lcb_store_cmd_t;
 
+
 #define LCB_A_C_ST_ID 7
 #define LCB_A_C_ST_V 0
     typedef struct lcb_arithmetic_cmd_st {

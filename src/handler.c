@@ -1095,6 +1095,10 @@ int lcb_dispatch_response(lcb_server_t *c, packet_info *info)
         /* Ignore */
         break;
     case PROTOCOL_BINARY_CMD_HELLO:
+    fprintf(stderr,"inside handler for hello");  
+        break;
+    case PROTOCOL_BINARY_CMD_COMPACTDB:
+    fprintf(stderr,"inside handler for compactDB");  
         break;
 
     case CMD_GET_CLUSTER_CONFIG:

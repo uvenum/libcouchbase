@@ -27,6 +27,7 @@
  *      ./minimal <host:port> <bucket> <passwd>
  *      mininal.exe <host:port> <bucket> <passwd>
  */
+//#include <snappy-c.h>
 #include <stdio.h>
 #include <libcouchbase/couchbase.h>
 #include <stdlib.h>
@@ -73,7 +74,14 @@ static void get_callback(lcb_t instance, const void *cookie, lcb_error_t error,
                 item->v.v0.cas, item->v.v0.flags, (unsigned long)item->v.v0.nbytes);
         fwrite(item->v.v0.bytes, sizeof(char), item->v.v0.nbytes, stderr);
         fprintf(stderr, "\n");
-    } else {
+        char uncompressed[256];
+        size_t uncompressed_len = 256;
+        //snappy_status status;
+        //status=snappy_uncompress(item->v.v0.bytes, item->v.v0.nbytes, uncompressed, &uncompressed_len);
+        fprintf(stderr, "uncompressed\n");
+        fwrite(uncompressed, sizeof(char), uncompressed_len, stderr);         
+        fprintf(stderr,"\n");
+  } else {
         fprintf(stderr, "GET ERROR: %s (0x%x)\n",
                 lcb_strerror(instance, error), error);
     }
@@ -84,6 +92,19 @@ int main(int argc, char *argv[])
 {
     
     fprintf(stderr,"first line.."); 
+    lcb_uint32_t tmo = 350000000;
+    const lcb_store_cmd_t *commands[1];
+    FILE *file20MB;
+    char *membuffer;
+    long numbytes;
+    file20MB = fopen("output.dat","r");
+    fseek(file20MB,0L,SEEK_END);
+    numbytes=ftell(file20MB);
+    fseek(file20MB,0L,SEEK_SET);
+    membuffer = (char*)calloc(numbytes,sizeof(char));
+    if(membuffer==NULL)assert(1==2);
+    fread(membuffer, sizeof(char),numbytes,file20MB);
+    fclose(file20MB); 
     lcb_error_t err;
     lcb_t instance;
     struct lcb_create_st create_options;
@@ -112,6 +133,8 @@ int main(int argc, char *argv[])
                 lcb_strerror(NULL, err));
         return 1;
     }
+    /*setting timeout for set/get*/
+    lcb_cntl(instance, LCB_CNTL_SET, LCB_CNTL_OP_TIMEOUT, &tmo);
     (void)lcb_set_error_callback(instance, error_callback);
     /* Initiate the connect sequence in libcouchbase */
     if ((err = lcb_connect(instance)) != LCB_SUCCESS) {
@@ -135,7 +158,18 @@ int main(int argc, char *argv[])
         }
     }
     fprintf(stderr,"after hello");
-    lcb_wait(instance);
+    const char inflated[] = "aaaaaaaaabbbbbbbccccccdddddd";
+    size_t inflated_len = strlen(inflated);
+    /*char deflated[256];
+    size_t deflated_len = 256;
+    //snappy_status status;
+    fprintf(stderr, "before compression: "); 
+    fwrite(inflated, sizeof(char), inflated_len, stderr);         
+    //status = snappy_compress(inflated, inflated_len,
+                            deflated, &deflated_len);
+    fprintf(stderr, "\nafter compression: "); 
+    fwrite(deflated, sizeof(char), deflated_len, stderr);  */       
+    /*lcb_wait(instance);
     {
         lcb_store_cmd_t cmd;
         const lcb_store_cmd_t *commands[1];
@@ -144,10 +178,10 @@ int main(int argc, char *argv[])
         memset(&cmd, 0, sizeof(cmd));
         cmd.v.v0.operation = LCB_SET;
         cmd.v.v0.datatype = LCB_BINARY_DATATYPE_COMPRESSED;
-        cmd.v.v0.key = "oo";
+        cmd.v.v0.key = "foo";
         cmd.v.v0.nkey = 3;
-        cmd.v.v0.bytes = "bar";
-        cmd.v.v0.nbytes = 3;
+        cmd.v.v0.bytes = deflated;
+        cmd.v.v0.nbytes = deflated_len;
         fprintf(stderr,"before store");
         err = lcb_store(instance, NULL, 1, commands);
         if (err != LCB_SUCCESS) {
@@ -155,6 +189,25 @@ int main(int argc, char *argv[])
             return 1;
         }
         fprintf(stderr,"after store");
+    }*/
+    lcb_wait(instance);
+    {
+        lcb_store_cmd_t cmd;
+        commands[0] = &cmd;
+        memset(&cmd, 0, sizeof(cmd));
+        cmd.v.v0.operation = LCB_SET;
+        cmd.v.v0.datatype = LCB_BINARY_DATATYPE_COMPRESSED;
+        cmd.v.v0.key = "foo20M";
+        cmd.v.v0.nkey = 6;
+        cmd.v.v0.bytes = membuffer;
+        cmd.v.v0.nbytes = numbytes;
+        fprintf(stderr,"before store 20MB");
+        err = lcb_store(instance, NULL, 1, commands);
+        if (err != LCB_SUCCESS) {
+            fprintf(stderr, "Failed to store 20MB: %s\n", lcb_strerror(NULL, err));
+            return 1;
+        }
+        fprintf(stderr,"after store 20MB");
     }
     lcb_wait(instance);
     {
@@ -162,8 +215,8 @@ int main(int argc, char *argv[])
         const lcb_get_cmd_t *commands[1];
         commands[0] = &cmd;
         memset(&cmd, 0, sizeof(cmd));
-        cmd.v.v0.key = "foo";
-        cmd.v.v0.nkey = 3;
+        cmd.v.v0.key = "foo20M";
+        cmd.v.v0.nkey = 6;
         err = lcb_get(instance, NULL, 1, commands);
         if (err != LCB_SUCCESS) {
             fprintf(stderr, "Failed to get: %s\n", lcb_strerror(NULL, err));

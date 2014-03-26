@@ -252,7 +252,15 @@ static void failout_single_request(lcb_server_t *server,
     case CMD_GET_CLUSTER_CONFIG:
         lcb_cccp_update2(ct->cookie, error, NULL, 0, NULL);
         break;
+    
+    case PROTOCOL_BINARY_CMD_HELLO:
+        lcb_cccp_update2(ct->cookie, error, NULL, 0, NULL);
+        break;
 
+    case PROTOCOL_BINARY_CMD_COMPACTDB:
+        lcb_cccp_update2(ct->cookie, error, NULL, 0, NULL);
+        break;
+    
     default:
         lcb_assert("unexpected opcode while purging the server" && 0);
     }

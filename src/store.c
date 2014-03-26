@@ -136,42 +136,104 @@ lcb_error_t lcb_hello(lcb_t instance,
                       const void *command_cookie)
 {
 
-        fprintf(stderr,"inside hello function..");
+        fprintf(stderr,"inside hello method..\n");
         lcb_server_t *server;
         protocol_binary_request_hello req;
         lcb_size_t headersize;
         lcb_size_t bodylen;
 
-        server = instance->servers + 1; 
+        server = instance->servers; 
         const char *useragent = "my prototype";
         uint16_t feature = htons(PROTOCOL_BINARY_FEATURE_DATATYPE);
 
         /*const void *key = useragent;*/
-        fprintf(stderr,"after setting useragent.."); 
+        fprintf(stderr,"setting the useragent..\n"); 
         memset(&req, 0, sizeof(req));
         req.message.header.request.magic = PROTOCOL_BINARY_REQ;
         req.message.header.request.opcode = PROTOCOL_BINARY_CMD_HELLO;
         req.message.header.request.keylen = ntohs(strlen(useragent));
         req.message.header.request.extlen = 0;
         req.message.header.request.datatype = PROTOCOL_BINARY_RAW_BYTES;
-        req.message.header.request.opaque = 0xdeadbeef;
+        req.message.header.request.opaque = ++instance->seqno;
 
         /* Make it known that this was a success. */
         lcb_error_handler(instance, LCB_SUCCESS, NULL);
 
         req.message.header.request.bodylen = htonl((uint32_t)(strlen(useragent) + sizeof(feature)));
-        fprintf(stderr,"after setting bodylen.."); 
+        /*fprintf(stderr,"after setting bodylen..");*/ 
 
         lcb_server_start_packet(server, NULL, &req, sizeof(req.message.header));
-        fprintf(stderr,"after starting packet.."); 
+        /*fprintf(stderr,"after starting packet..");*/ 
         lcb_server_write_packet(server, useragent, (lcb_size_t)strlen(useragent));
-        fprintf(stderr,"after writing key.."); 
+        /*fprintf(stderr,"after writing key.."); */
         lcb_server_write_packet(server, &feature, (lcb_size_t)sizeof(feature));
-        fprintf(stderr,"after writing feature.."); 
+        /*fprintf(stderr,"after writing feature.."); */
         lcb_server_end_packet(server);
-        fprintf(stderr,"after end packet.."); 
+        /*fprintf(stderr,"after end packet.."); */
         lcb_server_send_packets(server);
-        fprintf(stderr,"after sending packet.."); 
+        /*fprintf(stderr,"after sending packet.."); */
 
+    return lcb_synchandler_return(instance, LCB_SUCCESS);
+}
+
+
+LIBCOUCHBASE_API
+lcb_error_t lcb_compact(lcb_t instance,
+                      const void *command_cookie, uint16_t vb, uint64_t purge_before_ts, uint64_t purge_before_seq, uint8_t drop_deletes)
+{
+    
+    fprintf(stderr,"inside compact method..\n");
+    lcb_server_t *server;
+    protocol_binary_request_hello req;
+    lcb_size_t headersize;
+    
+    server = instance->servers;
+    uint16_t keylen = 0; 
+    uint32_t bodylen = 0; 
+    
+    //const void *key = useragent;
+    fprintf(stderr,"setting the useragent..\n");
+    memset(&req, 0, sizeof(req));
+    req.message.header.request.magic = PROTOCOL_BINARY_REQ;
+    req.message.header.request.opcode = PROTOCOL_BINARY_CMD_COMPACTDB;
+    req.message.header.request.keylen = ntohs(keylen);
+    req.message.header.request.extlen = 24;
+    req.message.header.request.vbucket = ntohs((lcb_uint16_t)vb);
+    req.message.header.request.datatype = PROTOCOL_BINARY_RAW_BYTES;
+    req.message.header.request.opaque = ++instance->seqno;
+        
+    struct compact_st {
+ 
+       uint64_t pbs;
+       uint64_t pbseq;
+       uint8_t  dds;
+       uint8_t bytes[7];
+
+    };
+    struct compact_st* compact_t;
+    compact_t = malloc(sizeof(struct compact_st));
+    compact_t->pbs = htonll(purge_before_ts);
+    compact_t->pbseq = htonll(purge_before_seq);
+    compact_t->dds = drop_deletes;
+    
+    //uint8_t bytes[24];
+    
+    // Make it known that this was a success. 
+    lcb_error_handler(instance, LCB_SUCCESS, NULL);
+    
+    req.message.header.request.bodylen = htonl(bodylen);
+    //fprintf(stderr,"after setting bodylen..");
+     
+    lcb_server_start_packet(server, NULL, &req, sizeof(req.message.header));
+    //fprintf(stderr,"after starting packet.."); 
+    lcb_server_write_packet(server, compact_t, (lcb_size_t)sizeof(struct compact_st));
+    //fprintf(stderr,"after writing key.."); 
+    // lcb_server_write_packet(server, compact_t, (lcb_size_t)sizeof(bytes));
+    //fprintf(stderr,"after writing feature.."); 
+    lcb_server_end_packet(server);
+    //fprintf(stderr,"after end packet.."); 
+    lcb_server_send_packets(server);
+    //fprintf(stderr,"after sending packet.."); 
+    
     return lcb_synchandler_return(instance, LCB_SUCCESS);
 }

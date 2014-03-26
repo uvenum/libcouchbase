@@ -420,6 +420,11 @@ extern "C" {
     LIBCOUCHBASE_API
     lcb_error_t lcb_hello(lcb_t instance,
                           const void *command_cookie);
+    
+    LIBCOUCHBASE_API
+    lcb_error_t lcb_compact(lcb_t instance,
+                          const void *command_cookie, uint16_t vb, uint64_t purge_before_ts, 
+                          uint64_t purge_before_seq, uint8_t drop_deletes);
 
     /**
      * Perform arithmetic operation on a keys value.
